@@ -24,7 +24,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
 # Realizando o bind do socket RAW ao host
 # Sockets RAW não precisam ser bindados a uma porta específica.
 HOST = socket.gethostbyname(socket.gethostname())
-s.bind(('localhost', 0))
+s.bind((HOST, 0))
 # Definindo opções do socket para incluir o cabeçalho IP
 # (IP_HDRINCL)
 # e receber todos os pacotes (SIO_RCVALL -> RCVALL_ON)
