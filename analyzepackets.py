@@ -1,32 +1,5 @@
-from dataclasses import dataclass
 import socket
 import datetime
-
-# Dataclass que armazena as informações de um pacote.
-
-
-@dataclass(init=True)
-class Packet:
-    version: int
-    source_ip: str
-    dest_ip: str
-    source_port: int
-    dest_port: int
-    transport_protocol: str
-    application_protocol: str
-    # Momento em que o pacote foi capturado.
-    # útil para montar a linha do tempo posteriormente.
-    captured_at: datetime.datetime
-    # Dados do pacote, excluso os cabeçalhos.
-    raw_data: bytes
-
-    def __str__(self):
-        string = f"{self.source_ip}:{self.source_port} -> {self.dest_ip}:{self.dest_port}"
-        string += f"\n{self.transport_protocol}/{self.application_protocol}"
-        string += f"\n{self.captured_at}"
-        string += f"\n{self.raw_data}"
-        return string
-
 
 # Dict convertendo a porta de destino para a string
 # que descreve o protocolo de aplicação
@@ -50,14 +23,15 @@ port_protocol_map = {
 s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
 # Realizando o bind do socket RAW ao host
 # Sockets RAW não precisam ser bindados a uma porta específica.
+HOST = socket.gethostbyname(socket.gethostname())
 s.bind(('localhost', 0))
 # Definindo opções do socket para incluir o cabeçalho IP
 # (IP_HDRINCL)
 # e receber todos os pacotes (SIO_RCVALL -> RCVALL_ON)
 s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
-# Lista contendo todos os pacotes capturados
-packets = list()
+# Criando arquivo res.txt contendo os dados de cada pacote
+file_txt = open('res.txt', 'w+')
 # Capturando pacotes enquanto o script não é interrompido
 try:
     while True:
@@ -115,22 +89,13 @@ try:
             raw_packet[ip_header_length:ip_header_length+2], 'big')
         dest_port = int.from_bytes(
             raw_packet[ip_header_length+2:ip_header_length+4], 'big')
-        # Encapsulando os dados do pacote em um objeto Packet
-        packet = Packet(
-            version,
-            source_ip,
-            dest_ip,
-            source_port,
-            dest_port,
-            transport_protocol_str,
-            port_protocol_map.get(dest_port, 'UNKNOWN'),
-            captured_at,
-            raw_data
-        )
-        # Adicionando o pacote à lista de pacotes capturados
-        packets.append(packet)
+        # Salvando no arquivo res.txt
+        string = f'{source_ip}:{source_port} -> {dest_ip}:{dest_port}'
+        string += f'\nat: {captured_at}'
+        string += f'\nTransfer protocol: {transport_protocol_str}'
+        string += f'\nApplication protocol: {port_protocol_map.get(dest_port, "Unknown")}'
+        string += f'\n\nData: {raw_data}\n'
+        print(string)
+        file_txt.write(string)
 except KeyboardInterrupt:
-    # Salvando todos os pacotes em um arquivo res.txt
-    with open('res.txt', 'w') as f:
-        for packet in packets:
-            f.write(str(packet) + '\n')
+    file_txt.close()
