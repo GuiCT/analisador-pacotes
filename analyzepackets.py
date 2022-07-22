@@ -20,6 +20,13 @@ class Packet:
     # Dados do pacote, excluso os cabeçalhos.
     raw_data: bytes
 
+    def print(self):
+        print(f"{self.source_ip}:{self.source_port} -> {self.dest_ip}:{self.dest_port}")
+        print(f"{self.transport_protocol} {self.application_protocol}")
+        print(f"{self.captured_at}")
+        print(f"{self.raw_data}")
+        print("\n")
+
 
 # Dict convertendo a porta de destino para a string
 # que descreve o protocolo de aplicação
@@ -34,7 +41,8 @@ port_protocol_map = {
     80: 'HTTP',
     110: 'POP3',
     143: 'IMAP',
-    443: 'HTTPS'
+    443: 'HTTPS',
+
 }
 
 # Criando socket RAW, capaz de receber todos os pacotes
@@ -101,13 +109,30 @@ try:
         # respectivos cabeçalhos. Esses cabeçalhos têm início logo após o
         # o cabeçalho IP. Logo basta utilizar o valor de ip_header_length
         # para obter o início dos cabeçalhos TCP e UDP.
-        source_port = raw_packet[ip_header_length:ip_header_length+2]
-        dest_port = raw_packet[ip_header_length+2:ip_header_length+4]
+        # O valor em bytes é decodificado utilizando o método
+        # int.from_bytes(), sabendo que a ordem dos bytes é big endian.
+        source_port = int.from_bytes(
+            raw_packet[ip_header_length:ip_header_length+2], 'big')
+        dest_port = int.from_bytes(
+            raw_packet[ip_header_length+2:ip_header_length+4], 'big')
+        # Verificando se a porta de destino é de um protocolo de aplicação
+        # desconhecido, se sim, o pacote será ignorado.
+        if dest_port not in port_protocol_map:
+            continue
         # Encapsulando os dados do pacote em um objeto Packet
-        packet = Packet(version, source_ip, dest_ip, source_port, dest_port,
-                        transport_protocol_str, port_protocol_map[dest_port],
-                        captured_at, raw_data)
+        packet = Packet(
+            version,
+            source_ip,
+            dest_ip,
+            source_port,
+            dest_port,
+            transport_protocol_str,
+            port_protocol_map.get(dest_port, 'UNKNOWN'),
+            captured_at,
+            raw_data
+        )
         # Adicionando o pacote à lista de pacotes capturados
         packets.append(packet)
 except KeyboardInterrupt:
-    pass
+    for packet in packets:
+        packet.print()
