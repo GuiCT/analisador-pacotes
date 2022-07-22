@@ -20,12 +20,12 @@ class Packet:
     # Dados do pacote, excluso os cabeçalhos.
     raw_data: bytes
 
-    def print(self):
-        print(f"{self.source_ip}:{self.source_port} -> {self.dest_ip}:{self.dest_port}")
-        print(f"{self.transport_protocol} {self.application_protocol}")
-        print(f"{self.captured_at}")
-        print(f"{self.raw_data}")
-        print("\n")
+    def __str__(self):
+        string = f"{self.source_ip}:{self.source_port} -> {self.dest_ip}:{self.dest_port}"
+        string += f"\n{self.transport_protocol}/{self.application_protocol}"
+        string += f"\n{self.captured_at}"
+        string += f"\n{self.raw_data}"
+        return string
 
 
 # Dict convertendo a porta de destino para a string
@@ -115,10 +115,6 @@ try:
             raw_packet[ip_header_length:ip_header_length+2], 'big')
         dest_port = int.from_bytes(
             raw_packet[ip_header_length+2:ip_header_length+4], 'big')
-        # Verificando se a porta de destino é de um protocolo de aplicação
-        # desconhecido, se sim, o pacote será ignorado.
-        if dest_port not in port_protocol_map:
-            continue
         # Encapsulando os dados do pacote em um objeto Packet
         packet = Packet(
             version,
@@ -134,5 +130,7 @@ try:
         # Adicionando o pacote à lista de pacotes capturados
         packets.append(packet)
 except KeyboardInterrupt:
-    for packet in packets:
-        packet.print()
+    # Salvando todos os pacotes em um arquivo res.txt
+    with open('res.txt', 'w') as f:
+        for packet in packets:
+            f.write(str(packet) + '\n')
