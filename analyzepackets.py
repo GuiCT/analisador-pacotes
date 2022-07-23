@@ -1,5 +1,6 @@
 import socket
 import datetime
+from tabulate import tabulate
 
 # Dict convertendo a porta de destino para a string
 # que descreve o protocolo de aplicação
@@ -57,6 +58,7 @@ try:
         source_ip = socket.inet_ntoa(raw_packet[12:16])
         # IP de destino está localizado no bytes 16, 17, 18 e 19.
         dest_ip = socket.inet_ntoa(raw_packet[16:20])
+
         # Se o protocolo possui número 6, então é um pacote TCP.
         if transport_protocol == 6:
             transport_protocol_str = 'TCP'
@@ -78,6 +80,7 @@ try:
         # e é ignorado.
         else:
             continue
+
         # Independentemente do protocolo de transporte, as portas de origem
         # e destino estão localizadas nos 4 primeiros bytes dos seus
         # respectivos cabeçalhos. Esses cabeçalhos têm início logo após o
@@ -89,13 +92,33 @@ try:
             raw_packet[ip_header_length:ip_header_length+2], 'big')
         dest_port = int.from_bytes(
             raw_packet[ip_header_length+2:ip_header_length+4], 'big')
-        # Salvando no arquivo res.txt
-        string = f'{source_ip}:{source_port} -> {dest_ip}:{dest_port}'
-        string += f'\nat: {captured_at}'
-        string += f'\nTransfer protocol: {transport_protocol_str}'
-        string += f'\nApplication protocol: {port_protocol_map.get(dest_port, "Unknown")}'
-        string += f'\n\nData: {raw_data}\n'
-        print(string)
-        file_txt.write(string)
+
+        # Salvando no arquivo res.txt e mostrando no console
+        # Utilizando tabulate para mostrar as informações do cabeçalho
+        table = tabulate([[
+            f'{source_ip}:{source_port}',
+            f'{dest_ip}:{dest_port}',
+            f'{captured_at}',
+            f'{transport_protocol_str}',
+            f'{port_protocol_map.get(dest_port, "Unknown")}'
+        ]], headers=[
+            'Source IP:Port',
+            'Destination IP:Port',
+            'Captured At',
+            'Transport Protocol',
+            'Application Protocol'
+        ])
+        print('\n' + table)
+        file_txt.write('\n' + table)
+
+        # Tentando decodificar os dados utilizando ASCII.
+        # Caso não consiga, é mostrado o valor bruto.
+        try:
+            data = raw_data.decode('ascii')
+            print('\n' + data)
+            file_txt.write('\n' + data)
+        except:
+            print('\n' + str(raw_data))
+            file_txt.write('\n' + str(raw_data))
 except KeyboardInterrupt:
     file_txt.close()
