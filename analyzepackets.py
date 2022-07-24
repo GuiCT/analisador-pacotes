@@ -1,6 +1,8 @@
 import socket
 import datetime
 from tabulate import tabulate
+import numpy as np
+from matplotlib import pyplot as plt
 
 # Dict convertendo a porta de destino para a string
 # que descreve o protocolo de aplicação
@@ -15,8 +17,7 @@ port_protocol_map = {
     80: 'HTTP',
     110: 'POP3',
     143: 'IMAP',
-    443: 'HTTPS',
-
+    443: 'HTTPS'
 }
 
 # Criando socket RAW, capaz de receber todos os pacotes
@@ -33,12 +34,24 @@ s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 # Criando arquivo res.txt contendo os dados de cada pacote
 file_txt = open('res.txt', 'w+')
+# Número de segundos que o script será executado
+n_sec = 10
+# Momento inicial
+t1 = datetime.datetime.now()
+# Momento final
+t2 = datetime.datetime.now() + datetime.timedelta(seconds=n_sec)
+# Array para cada segundo
+t = np.arange(0, n_sec + 1)
+# Quantidade de pacotes para cada protocolo de aplicação
+# para cada segundo.
+hist = np.zeros((n_sec + 1, len(port_protocol_map)))
 # Capturando pacotes enquanto o script não é interrompido
 try:
-    while True:
+    while datetime.datetime.now() < t2:
         raw_packet, _ = s.recvfrom(65565)
         # Momento em que o pacote foi capturado
         captured_at = datetime.datetime.now()
+        second = int((captured_at - t1).total_seconds())
         # Primeiro byte do pacote contém a versão do protocolo
         # assim como o tamanho do cabeçalho IP.
         # A versão está localizada nos 4 bits mais significativos
@@ -93,6 +106,14 @@ try:
         dest_port = int.from_bytes(
             raw_packet[ip_header_length+2:ip_header_length+4], 'big')
 
+        # Se o protocolo de aplicação é conhecido
+        # (a partir da porta de destino)
+        # incrementar o número de pacotes recebidos desse protocolo
+        # no histograma.
+        if dest_port in port_protocol_map:
+            index_of_protocol = list(port_protocol_map.keys()).index(dest_port)
+            hist[second, index_of_protocol] += 1     
+
         # Salvando no arquivo res.txt e mostrando no console
         # Utilizando tabulate para mostrar as informações do cabeçalho
         table = tabulate([[
@@ -121,4 +142,13 @@ try:
             print('\n' + str(raw_data))
             file_txt.write('\n' + str(raw_data))
 except KeyboardInterrupt:
-    file_txt.close()
+    pass
+
+file_txt.close()
+# Ignorando quantidade de pacotes igual a 0.
+plt.plot(t, np.ma.masked_where(hist == 0, hist), '.-')
+plt.legend(port_protocol_map.values())
+plt.xlabel = 'Time (s)'
+plt.ylabel = 'Quantidade de pacotes'
+plt.title = 'Histograma de pacotes recebidos'
+plt.show()
