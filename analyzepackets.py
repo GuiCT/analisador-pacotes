@@ -8,12 +8,9 @@ from matplotlib import pyplot as plt
 # que descreve o protocolo de aplicação
 port_protocol_map = {
     21: 'FTP',
-    22: 'SSH',
     23: 'TELNET',
     25: 'SMTP',
     53: 'DNS',
-    67: 'DHCP',
-    68: 'DHCP',
     80: 'HTTP',
     110: 'POP3',
     143: 'IMAP',
@@ -35,7 +32,7 @@ s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 # Criando arquivo res.txt contendo os dados de cada pacote
 file_txt = open('res.txt', 'w+')
 # Número de segundos que o script será executado
-n_sec = 10
+n_sec = 60
 # Momento inicial
 t1 = datetime.datetime.now()
 # Momento final
