@@ -104,12 +104,15 @@ try:
             raw_packet[ip_header_length+2:ip_header_length+4], 'big')
 
         # Se o protocolo de aplicação é conhecido
-        # (a partir da porta de destino)
+        # (a partir das portas de origem e destino)
         # incrementar o número de pacotes recebidos desse protocolo
         # no histograma.
-        if dest_port in port_protocol_map:
-            index_of_protocol = list(port_protocol_map.keys()).index(dest_port)
-            hist[second, index_of_protocol] += 1     
+        if (source_port in port_protocol_map) or (dest_port in port_protocol_map):
+            if (source_port in port_protocol_map):
+                index_of_protocol = list(port_protocol_map.keys()).index(source_port)
+            else:
+                index_of_protocol = list(port_protocol_map.keys()).index(dest_port)
+            hist[second, index_of_protocol] += 1
 
         # Salvando no arquivo res.txt e mostrando no console
         # Utilizando tabulate para mostrar as informações do cabeçalho
