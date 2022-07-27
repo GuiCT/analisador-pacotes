@@ -42,7 +42,7 @@ t = np.arange(0, n_sec + 1)
 # Quantidade de pacotes para cada protocolo de aplicação
 # para cada segundo.
 hist = np.zeros((n_sec + 1, len(port_protocol_map)))
-# Capturando pacotes enquanto o script não é interrompido
+# Capturando pacotes enquanto o tempo não chega ao fim
 try:
     while datetime.datetime.now() < t2:
         raw_packet, _ = s.recvfrom(65565)
@@ -147,6 +147,7 @@ except KeyboardInterrupt:
 file_txt.close()
 # Ignorando quantidade de pacotes igual a 0.
 plt.plot(t, np.ma.masked_where(hist == 0, hist), '.-')
+# Utilizando valores do dict como labels do gráfico.
 plt.legend(port_protocol_map.values())
 plt.xlabel = 'Time (s)'
 plt.ylabel = 'Quantidade de pacotes'
