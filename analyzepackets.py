@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 # que descreve o protocolo de aplicação
 port_protocol_map = {
     21: 'FTP',
+    22: 'SSH',
     23: 'TELNET',
     25: 'SMTP',
     53: 'DNS',
